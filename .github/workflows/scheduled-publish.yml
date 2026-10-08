@@ -1,0 +1,62 @@
+# Auto-publish draft articles every Tuesday and Friday.
+#
+# Default behavior (PUBLISH_MODE=scheduled):
+#   Publishes any draft whose frontmatter has publishOn: YYYY-MM-DD on or before today.
+#
+# Queue behavior (set repo variable PUBLISH_MODE=queue):
+#   Also publishes the next draft without publishOn (oldest first), up to PUBLISH_LIMIT.
+#
+# Requirements:
+#   - Repo on GitHub
+#   - Workflow permissions: contents: write (Settings → Actions → General → Workflow permissions)
+#   - Hosting connected to this repo (e.g. Vercel) so the push triggers a production deploy
+
+name: Scheduled article publish
+
+on:
+  schedule:
+    # Every Tuesday and Friday at 09:00 UTC
+    # (Adjust hour if you want a different local time)
+    - cron: "0 9 * * 2,5"
+  workflow_dispatch: # allow manual "Run workflow" from GitHub Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish due drafts
+        env:
+          # scheduled = only publishOn <= today
+          # queue     = scheduled + next N unscheduled drafts
+          PUBLISH_MODE: ${{ vars.PUBLISH_MODE || 'scheduled' }}
+          PUBLISH_LIMIT: ${{ vars.PUBLISH_LIMIT || '1' }}
+        run: npx tsx scripts/publish-scheduled.ts
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet; then
+            echo "No file changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/articles
+          git commit -m "chore: auto-publish scheduled articles $(date -u +%Y-%m-%d)"
+          git push
