@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { calculateBudget } from "@/lib/calculators/budget";
+import { CURRENCIES, formatMoney } from "@/lib/currency";
 
 export function BudgetCalculator() {
-  const [income, setIncome] = useState("4000");
+  const [currency, setCurrency] = useState("INR");
+  const [income, setIncome] = useState("40000");
   const [needs, setNeeds] = useState("50");
   const [wants, setWants] = useState("30");
   const [savings, setSavings] = useState("20");
   const [result, setResult] = useState(() =>
-    calculateBudget({ monthlyIncome: 4000 })
+    calculateBudget({ monthlyIncome: 40000 })
   );
 
   function handleCalculate(e: React.FormEvent) {
@@ -23,6 +25,8 @@ export function BudgetCalculator() {
     setResult(r);
   }
 
+  const money = (n: number) => formatMoney(n, currency);
+
   return (
     <div className="border border-border rounded-md bg-card p-6">
       <h3 className="text-lg font-semibold mb-1">Budget calculator</h3>
@@ -32,20 +36,39 @@ export function BudgetCalculator() {
 
       <form onSubmit={handleCalculate} className="space-y-4">
         <div>
+          <label htmlFor="budget-currency" className="block text-sm font-medium mb-1">
+            Currency
+          </label>
+          <select
+            id="budget-currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} — {c.name} ({c.symbol})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <label htmlFor="income" className="block text-sm font-medium mb-1">
-            Monthly take-home income ($)
+            Monthly take-home income
           </label>
           <input
             id="income"
             type="number"
             min="0"
-            step="1"
+            step="any"
             value={income}
             onChange={(e) => setIncome(e.target.value)}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             required
           />
         </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label htmlFor="needs" className="block text-sm font-medium mb-1">
@@ -90,6 +113,7 @@ export function BudgetCalculator() {
             />
           </div>
         </div>
+
         <button
           type="submit"
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
@@ -99,7 +123,10 @@ export function BudgetCalculator() {
       </form>
 
       {result.errors.length > 0 && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-danger" role="alert">
+        <div
+          className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-danger"
+          role="alert"
+        >
           {result.errors.map((e) => (
             <p key={e}>{e}</p>
           ))}
@@ -111,20 +138,20 @@ export function BudgetCalculator() {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-3 bg-accent-soft rounded-md">
               <p className="text-xs text-muted uppercase tracking-wide">Needs</p>
-              <p className="text-lg font-semibold mt-1">${result.needs.toLocaleString()}</p>
+              <p className="text-lg font-semibold mt-1">{money(result.needs)}</p>
             </div>
             <div className="p-3 bg-accent-soft rounded-md">
               <p className="text-xs text-muted uppercase tracking-wide">Wants</p>
-              <p className="text-lg font-semibold mt-1">${result.wants.toLocaleString()}</p>
+              <p className="text-lg font-semibold mt-1">{money(result.wants)}</p>
             </div>
             <div className="p-3 bg-accent-soft rounded-md">
               <p className="text-xs text-muted uppercase tracking-wide">Savings</p>
-              <p className="text-lg font-semibold mt-1">${result.savings.toLocaleString()}</p>
+              <p className="text-lg font-semibold mt-1">{money(result.savings)}</p>
             </div>
           </div>
           {result.remaining !== 0 && (
             <p className="text-sm text-muted">
-              Unallocated: ${result.remaining.toLocaleString()}
+              Unallocated: {money(result.remaining)}
             </p>
           )}
         </div>
@@ -138,6 +165,9 @@ export function BudgetCalculator() {
           {result.assumptions.map((a) => (
             <li key={a}>{a}</li>
           ))}
+          <li>
+            Currency is for display only. Amounts are not converted between currencies.
+          </li>
         </ul>
       </details>
     </div>
