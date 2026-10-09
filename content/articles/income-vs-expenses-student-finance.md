@@ -8,9 +8,8 @@ date: "2026-10-09"
 status: published
 sources:
   - title: "50/30/20 Budget Rule"
-      url: "https://www.investopedia.com/ask/answers/022916/what-502030-budget-rule.asp"
-      ---
-
+    url: "https://www.investopedia.com/ask/answers/022916/what-502030-budget-rule.asp"
+---
       ## Welcome to my personal finance journey
 
       Welcome, everyone!
