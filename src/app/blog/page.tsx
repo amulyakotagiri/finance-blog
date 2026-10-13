@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getPublishedArticles } from "@/lib/articles";
+import { getDbPublishedArticles } from "@/lib/articles-db";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Articles",
@@ -8,8 +11,62 @@ export const metadata: Metadata = {
     "Practical personal finance articles on budgeting, saving, investing and money habits.",
 };
 
-export default function BlogPage() {
-  const articles = getPublishedArticles();
+export default async function BlogPage() {
+  // File-based articles
+  let fileArticles: ReturnType<typeof getPublishedArticles> = [];
+  try {
+    fileArticles = getPublishedArticles();
+  } catch {
+    /* unavailable in some edge environments */
+  }
+
+  // DB articles (scheduled articles that have been published)
+  type DbArticle = {
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    category: { name: string } | null;
+    publishedAt: Date | null;
+    readingTime: number | null;
+  };
+  let dbArticles: DbArticle[] = [];
+  try {
+    dbArticles = await getDbPublishedArticles();
+  } catch {
+    /* DB not configured */
+  }
+
+  // Merge and de-duplicate (prefer file articles)
+  const fileSlugs = new Set(fileArticles.map((a) => a.slug));
+  const mergedDb = dbArticles.filter((a) => !fileSlugs.has(a.slug));
+
+  type DisplayArticle = {
+    slug: string;
+    title: string;
+    excerpt: string;
+    category: string;
+    date: string;
+    readingTime: number;
+  };
+
+  const articles: DisplayArticle[] = [
+    ...fileArticles.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      excerpt: a.excerpt,
+      category: a.category,
+      date: a.date,
+      readingTime: a.readingTime,
+    })),
+    ...mergedDb.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      excerpt: a.excerpt ?? "",
+      category: a.category?.name ?? "General",
+      date: a.publishedAt?.toISOString().slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+      readingTime: a.readingTime ?? 3,
+    })),
+  ].sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-16">

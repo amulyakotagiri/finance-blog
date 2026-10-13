@@ -32,41 +32,62 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function renderContent(content: string) {
-  return content
-    .trim()
-    .split("\n\n")
-    .map((block, i) => {
-      if (block.startsWith("## ")) {
-        const text = block.slice(3);
-        const id = text
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^\w-]/g, "");
-        return (
-          <h2
-            key={i}
-            id={id}
-            className="text-xl font-semibold mt-10 mb-3 tracking-tight"
-          >
-            {text}
-          </h2>
-        );
-      }
-      if (block.startsWith("### ")) {
-        const text = block.slice(4);
-        return (
-          <h3 key={i} className="text-lg font-semibold mt-8 mb-2 tracking-tight">
-            {text}
-          </h3>
-        );
-      }
+  // Normalise CRLF and split on 2 or more newlines (with optional whitespace)
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  const rawBlocks = normalized.split(/\n\s*\n+/);
+
+  return rawBlocks.map((rawBlock, i) => {
+    // Strip leading block indentation if any
+    const block = rawBlock
+      .split("\n")
+      .map((l) => l.trimStart())
+      .join("\n")
+      .trim();
+
+    if (block.startsWith("## ")) {
+      const text = block.slice(3).trim();
+      const id = text
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "");
+      return (
+        <h2
+          key={i}
+          id={id}
+          className="text-xl font-semibold mt-10 mb-3 tracking-tight"
+        >
+          {text}
+        </h2>
+      );
+    }
+    if (block.startsWith("### ")) {
+      const text = block.slice(4).trim();
+      return (
+        <h3 key={i} className="text-lg font-semibold mt-8 mb-2 tracking-tight">
+          {text}
+        </h3>
+      );
+    }
+
       if (block.includes("\n- ") || block.startsWith("- ")) {
-        const items = block.split("\n").filter((l) => l.startsWith("- "));
+        const items = block.split("\n").filter((l) => l.trimStart().startsWith("- "));
         return (
           <ul key={i} className="list-disc pl-5 my-4 space-y-1">
-            {items.map((item, j) => (
-              <li key={j}>{item.replace(/^-\s*/, "")}</li>
-            ))}
+            {items.map((item, j) => {
+              const text = item.replace(/^-\s*/, "");
+              const parts = text.split(/(\*\*[^*]+\*\*)/g);
+              return (
+                <li key={j}>
+                  {parts.map((p, k) =>
+                    p.startsWith("**") && p.endsWith("**") ? (
+                      <strong key={k}>{p.slice(2, -2)}</strong>
+                    ) : (
+                      p
+                    )
+                  )}
+                </li>
+              );
+            })}
           </ul>
         );
       }
@@ -85,6 +106,7 @@ function renderContent(content: string) {
       );
     });
 }
+
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;

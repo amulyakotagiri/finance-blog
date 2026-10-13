@@ -47,7 +47,17 @@ function parseFile(filename: string): Article | null {
   const status: ArticleStatus =
     data.status === "published" ? "published" : "draft";
 
-  const stats = readingTime(content || "");
+  // Normalise Windows CRLF to LF and trim lines
+  const normalizedContent = (content || "")
+
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((l) => l.trimEnd())
+    .join("\n")
+    .trim();
+
+  const stats = readingTime(normalizedContent || "");
 
   return {
     slug,
@@ -66,7 +76,7 @@ function parseFile(filename: string): Article | null {
     metaTitle: data.metaTitle as string | undefined,
     metaDescription: data.metaDescription as string | undefined,
     filePath: fullPath,
-    content: content.trim(),
+    content: normalizedContent,
   };
 }
 
@@ -131,3 +141,57 @@ export function getDraftsReadyToPublish(
       return pa < pb ? -1 : 1;
     });
 }
+
+/** Save or update a file-based article in content/articles/ */
+export function saveArticleFile(article: {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt?: string;
+  category?: string;
+  author?: string;
+  date?: string;
+  status?: ArticleStatus;
+  publishOn?: string;
+  sources?: { title: string; url?: string }[];
+}): string {
+  ensureDir();
+  const filePath = path.join(ARTICLES_DIR, `${article.slug}.md`);
+  const frontmatter: Record<string, unknown> = {
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt || "",
+    category: article.category || "General",
+    author: article.author || "Amulya Kotagiri",
+    date: article.date || new Date().toISOString().slice(0, 10),
+    status: article.status || "draft",
+  };
+
+  if (article.publishOn) {
+    frontmatter.publishOn = article.publishOn;
+  }
+  if (article.sources && article.sources.length > 0) {
+    frontmatter.sources = article.sources;
+  }
+
+  const fileContent = matter.stringify(article.content.trim(), frontmatter);
+  fs.writeFileSync(filePath, fileContent, "utf8");
+  return filePath;
+}
+
+/** Delete a file-based article */
+export function deleteArticleFile(slug: string): boolean {
+  ensureDir();
+  const filePath = path.join(ARTICLES_DIR, `${slug}.md`);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    return true;
+  }
+  const mdxPath = path.join(ARTICLES_DIR, `${slug}.mdx`);
+  if (fs.existsSync(mdxPath)) {
+    fs.unlinkSync(mdxPath);
+    return true;
+  }
+  return false;
+}
+

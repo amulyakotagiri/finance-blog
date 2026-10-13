@@ -11,7 +11,7 @@ export function createSessionToken(): string {
   const secret = getSecret();
   const payload = `admin:${Date.now()}`;
   const sig = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  return Buffer.from(`\( {payload}. \){sig}`).toString("base64url");
+  return Buffer.from(`${payload}.${sig}`).toString("base64url");
 }
 
 export function verifySessionToken(token: string | undefined): boolean {
@@ -22,7 +22,10 @@ export function verifySessionToken(token: string | undefined): boolean {
     if (!payload || !sig) return false;
     const secret = getSecret();
     const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length) return false;
+    if (!crypto.timingSafeEqual(sigBuf, expBuf)) return false;
     const ts = Number(payload.split(":")[1]);
     if (!ts || Date.now() - ts > 7 * 24 * 60 * 60 * 1000) return false;
     return true;
