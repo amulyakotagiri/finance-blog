@@ -2,9 +2,10 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 
 const COOKIE_NAME = "ms_admin_session";
+const DEFAULT_ADMIN_PASSWORD = "amulya@erragadda";
 
 function getSecret() {
-  return process.env.ADMIN_PASSWORD || process.env.NEXTAUTH_SECRET || "dev-only-change-me";
+  return process.env.ADMIN_PASSWORD || process.env.NEXTAUTH_SECRET || DEFAULT_ADMIN_PASSWORD;
 }
 
 export function createSessionToken(): string {
@@ -42,10 +43,7 @@ export async function isAdminAuthenticated(): Promise<boolean> {
 export { COOKIE_NAME };
 
 export function checkPassword(password: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) {
-    return password === "admin123" && process.env.NODE_ENV !== "production";
-  }
+  const expected = process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
   const a = Buffer.from(password);
   const b = Buffer.from(expected);
   if (a.length !== b.length) return false;
@@ -55,3 +53,4 @@ export function checkPassword(password: string): boolean {
     return false;
   }
 }
+
