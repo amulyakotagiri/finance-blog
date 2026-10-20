@@ -1,17 +1,19 @@
 ---
-title: "UPI vs Cash vs Credit Cards: How Your Payment Method Shapes Your Spending"
-slug: "upi-vs-cash-vs-credit-card"
-excerpt: "They're all ways to pay, but they can influence how we think about spending. Here's what I discovered when I started paying attention to my own habits."
-category: "Money Basics"
-author: "Amulya Kotagiri"
-date: "2026-10-13"
-status: draft
-publishOn: "2026-10-16"
+title: 'UPI vs Cash vs Credit Cards: How Your Payment Method Shapes Your Spending'
+slug: upi-vs-cash-vs-credit-card
+excerpt: >-
+  They're all ways to pay, but they can influence how we think about spending.
+  Here's what I discovered when I started paying attention to my own habits.
+category: Money Basics
+author: Amulya Kotagiri
+date: '2026-10-13'
+status: published
 sources:
-  - title: "Reserve Bank of India"
-    url: "https://www.rbi.org.in/"
-  - title: "National Payments Corporation of India: UPI"
-    url: "https://www.npci.org.in/what-we-do/upi/product-overview"
+  - title: Reserve Bank of India
+    url: 'https://www.rbi.org.in/'
+  - title: 'National Payments Corporation of India: UPI'
+    url: 'https://www.npci.org.in/what-we-do/upi/product-overview'
+updated: '2026-10-20'
 ---
 
 UPI vs Cash vs Credit Cards: More Than Just a Way to Pay
